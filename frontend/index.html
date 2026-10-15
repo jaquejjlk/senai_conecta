@@ -8,56 +8,86 @@
 </head>
 <body>
     <header class="header">
-        <div class="logo">SENAI CONECTA</div>
-        <div class="search-box">
-            <input type="text" id="searchInput" placeholder="Pesquisar @username...">
-        </div>
-        <div class="user-menu" id="userMenu">
-            <!-- Renderizado via JS conforme estado de autenticação -->
+        <div class="header-inner">
+            <span>SENAI CONECTA</span>
+            <div class="search-box">
+                <span class="search-icon" data-icon="search" data-size="18"></span>
+                <input type="text" id="searchInput" placeholder="Pesquisar @username..."
+                       autocomplete="off" aria-label="Pesquisar">
+                <button type="button" id="searchClear" class="icon-btn small hidden" onclick="clearSearch()"
+                        aria-label="Limpar pesquisa" title="Limpar pesquisa">
+                    <span data-icon="x" data-size="16"></span>
+                </button>
+            </div>
+
+            <div class="user-menu" id="userMenu">
+                <!-- Renderizado via JS conforme estado de autenticação -->
+            </div>
         </div>
     </header>
 
     <main class="container">
-        <section id="createPostSection" class="card hidden">
-            <h3>Criar Publicação</h3>
-            <form id="postForm">
-                <textarea id="postText" placeholder="O que você está pensando?" required></textarea>
-                <div class="form-actions">
-                    <input type="file" id="postImage" accept="image/*">
-                    <button type="submit" class="btn primary">Publicar</button>
-                </div>
-            </form>
-        </section>
+        <div id="feedView">
+            <section id="createPostSection" class="card composer hidden">
+                <form id="postForm">
+                    <textarea id="postText" rows="3" maxlength="1000" aria-label="Texto da publicação"
+                              placeholder="Compartilhe algo com a comunidade"></textarea>
+                    <div class="composer-actions">
+                        <label class="file-btn">
+                            <input type="file" id="postImage" accept="image/*" class="sr-only">
+                            <span data-icon="image" data-size="18"></span>
+                            <span id="postImageName">Adicionar imagem</span>
+                        </label>
+                        <button type="submit" id="postSubmit" class="btn primary">Publicar</button>
+                    </div>
+                </form>
+            </section>
 
-        <section id="feed" class="feed-container">
-            <!-- Feed renderizado dinamicamente -->
-        </section>
+            <div id="searchInfo" class="search-info hidden"></div>
+            <section id="peopleResults" class="people hidden" aria-label="Pessoas encontradas"></section>
+            <section id="feed" class="feed" aria-live="polite"></section>
+        </div>
+
+        <div id="profileView" class="hidden"></div>
     </main>
 
     <!-- Modal de Autenticação -->
-    <div id="authModal" class="modal hidden">
+    <div id="authModal" class="modal hidden" role="dialog" aria-modal="true" aria-label="Entrar ou cadastrar">
         <div class="modal-content">
-            <span class="close-btn" onclick="closeAuthModal()">&times;</span>
-            <div class="tabs">
-                <button id="tabLogin" class="tab-btn active" onclick="switchTab('login')">Login</button>
-                <button id="tabRegister" class="tab-btn" onclick="switchTab('register')">Cadastrar</button>
+            <button type="button" class="icon-btn modal-close" onclick="closeAuthModal()" aria-label="Fechar">
+                <span data-icon="x" data-size="20"></span>
+            </button>
+
+            <div class="tabs" role="tablist">
+                <button id="tabLogin" class="tab-btn active" role="tab" onclick="switchTab('login')">Entrar</button>
+                <button id="tabRegister" class="tab-btn" role="tab" onclick="switchTab('register')">Cadastrar</button>
             </div>
 
             <form id="loginForm" class="auth-form">
-                <input type="email" id="loginEmail" placeholder="E-mail" required>
-                <input type="password" id="loginSenha" placeholder="Senha" required>
-                <div id="loginError" class="error-msg hidden"></div>
-                <button type="submit" class="btn primary">Entrar</button>
+                <input type="email" id="loginEmail" placeholder="E-mail" autocomplete="email" required>
+                <input type="password" id="loginSenha" placeholder="Senha" autocomplete="current-password" required>
+                <div id="loginError" class="error-msg hidden" role="alert"></div>
+                <button type="submit" class="btn primary block">
+                    <span data-icon="login" data-size="18"></span> Entrar
+                </button>
             </form>
 
             <form id="registerForm" class="auth-form hidden">
-                <input type="text" id="regNome" placeholder="Nome Completo" required>
-                <input type="text" id="regUsername" placeholder="Nome de usuário (@username)" required>
-                <input type="email" id="regEmail" placeholder="E-mail" required>
-                <input type="password" id="regSenha" placeholder="Senha" required>
-                <input type="file" id="regFoto" accept="image/*">
-                <div id="regError" class="error-msg hidden"></div>
-                <button type="submit" class="btn primary">Cadastrar</button>
+                <input type="text" id="regNome" placeholder="Nome completo" autocomplete="name" required>
+                <input type="text" id="regUsername" placeholder="Nome de usuário (sem @)" autocomplete="username"
+                       pattern="@?[A-Za-z0-9_.]{3,30}" title="3 a 30 caracteres: letras, números, _ ou ." required>
+                <input type="email" id="regEmail" placeholder="E-mail" autocomplete="email" required>
+                <input type="password" id="regSenha" placeholder="Senha (mínimo 6 caracteres)" minlength="6"
+                       autocomplete="new-password" required>
+
+                <label class="file-btn">
+                    <input type="file" id="regFoto" accept="image/*" class="sr-only">
+                    <span data-icon="image" data-size="18"></span>
+                    <span id="regFotoName">Foto de perfil (opcional)</span>
+                </label>
+
+                <div id="regError" class="error-msg hidden" role="alert"></div>
+                <button type="submit" class="btn primary block">Criar conta</button>
             </form>
         </div>
     </div>
@@ -66,6 +96,7 @@
         <p>&copy; 2026-2027 SENAI Conecta</p>
     </footer>
 
+    <script src="js/icons.js"></script>
     <script src="js/api.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/app.js"></script>

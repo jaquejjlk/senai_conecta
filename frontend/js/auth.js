@@ -1,87 +1,121 @@
 function checkAuth() {
-    const token = localStorage.getItem('token');
-    const user = JSON.parse(localStorage.getItem('usuario') || 'null');
-    const userMenu = document.getElementById('userMenu');
-    const createPostSection = document.getElementById('createPostSection');
+    const token = getToken();
+    const user = getUser();
+
+    const userMenu = $('userMenu');
+    const createPostSection = $('createPostSection');
 
     if (token && user) {
         userMenu.innerHTML = `
-            <span>@${user.username}</span>
-            <button class="btn" onclick="logout()">Sair</button>
+            <a class="user-chip" href="#/perfil/${encodeURIComponent(user.username)}" title="Meu perfil">
+                ${avatarHtml(user.foto, user.nome, 'sm')}
+                <span class="user-chip-name">Meu perfil</span>
+            </a>
+            <button type="button" class="icon-btn" onclick="logout()" aria-label="Sair" title="Sair">
+                ${icon('logout', 20)}
+            </button>
         `;
         createPostSection.classList.remove('hidden');
     } else {
-        userMenu.innerHTML = `<button class="btn primary" onclick="openAuthModal()">Entrar</button>`;
+        userMenu.innerHTML = `
+            <button type="button" class="btn light" onclick="openAuthModal()">
+                ${icon('login', 18)} <span>Entrar</span>
+            </button>
+        `;
         createPostSection.classList.add('hidden');
     }
 }
 
 function openAuthModal() {
-    document.getElementById('authModal').classList.remove('hidden');
+    $('authModal').classList.remove('hidden');
+    const form = $('loginForm').classList.contains('hidden') ? 'regNome' : 'loginEmail';
+    setTimeout(() => $(form).focus(), 0);
 }
 
 function closeAuthModal() {
-    document.getElementById('authModal').classList.add('hidden');
+    $('authModal').classList.add('hidden');
 }
 
 function switchTab(tab) {
     const isLogin = tab === 'login';
-    document.getElementById('loginForm').classList.toggle('hidden', !isLogin);
-    document.getElementById('registerForm').classList.toggle('hidden', isLogin);
-    document.getElementById('tabLogin').classList.toggle('active', isLogin);
-    document.getElementById('tabRegister').classList.toggle('active', !isLogin);
+    $('loginForm').classList.toggle('hidden', !isLogin);
+    $('registerForm').classList.toggle('hidden', isLogin);
+    $('tabLogin').classList.toggle('active', isLogin);
+    $('tabRegister').classList.toggle('active', !isLogin);
+    $('tabLogin').setAttribute('aria-selected', isLogin);
+    $('tabRegister').setAttribute('aria-selected', !isLogin);
 }
 
 function logout() {
     localStorage.removeItem('token');
     localStorage.removeItem('usuario');
     checkAuth();
-    loadFeed();
+    refreshView(true);
+    showToast('Você saiu da conta.');
 }
 
-document.getElementById('loginForm').addEventListener('submit', async (e) => {
+// Fecha o modal ao clicar fora dele ou ao apertar Esc
+$('authModal').addEventListener('click', (e) => {
+    if (e.target === $('authModal')) closeAuthModal();
+});
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Escape' && !$('authModal').classList.contains('hidden')) closeAuthModal();
+});
+
+$('regFoto').addEventListener('change', (e) => {
+    $('regFotoName').textContent = e.target.files[0]?.name || 'Foto de perfil (opcional)';
+});
+
+$('loginForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const errorDiv = document.getElementById('loginError');
+    const errorDiv = $('loginError');
     errorDiv.classList.add('hidden');
 
     try {
         const res = await apiFetch('/login', {
             method: 'POST',
             body: JSON.stringify({
-                email: document.getElementById('loginEmail').value,
-                senha: document.getElementById('loginSenha').value
+                email: $('loginEmail').value.trim(),
+                senha: $('loginSenha').value
             })
         });
 
         localStorage.setItem('token', res.token);
         localStorage.setItem('usuario', JSON.stringify(res.usuario));
+        $('loginForm').reset();
         closeAuthModal();
         checkAuth();
-        loadFeed();
+        refreshView(true);
+        showToast(`Olá, ${res.usuario.nome.split(' ')[0]}!`, 'success');
     } catch (err) {
         errorDiv.textContent = err.message;
         errorDiv.classList.remove('hidden');
     }
 });
 
-document.getElementById('registerForm').addEventListener('submit', async (e) => {
+$('registerForm').addEventListener('submit', async (e) => {
     e.preventDefault();
-    const errorDiv = document.getElementById('regError');
+    const errorDiv = $('regError');
     errorDiv.classList.add('hidden');
 
+    const email = $('regEmail').value.trim();
     const formData = new FormData();
-    formData.append('nome', document.getElementById('regNome').value);
-    formData.append('username', document.getElementById('regUsername').value);
-    formData.append('email', document.getElementById('regEmail').value);
-    formData.append('senha', document.getElementById('regSenha').value);
-    
-    const foto = document.getElementById('regFoto').files[0];
+    formData.append('nome', $('regNome').value.trim());
+    formData.append('username', $('regUsername').value.trim());
+    formData.append('email', email);
+    formData.append('senha', $('regSenha').value);
+
+    const foto = $('regFoto').files[0];
     if (foto) formData.append('foto', foto);
 
     try {
         await apiFetch('/cadastro', { method: 'POST', body: formData });
-        alert('Cadastro realizado com sucesso! Faça login.');
+        $('registerForm').reset();
+        $('regFotoName').textContent = 'Foto de perfil (opcional)';
+        $('loginEmail').value = email;
         switchTab('login');
+        $('loginSenha').focus();
+        showToast('Conta criada. Entre com seu e-mail e senha.', 'success');
     } catch (err) {
         errorDiv.textContent = err.message;
         errorDiv.classList.remove('hidden');
